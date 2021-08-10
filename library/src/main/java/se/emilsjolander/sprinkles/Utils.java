@@ -18,6 +18,9 @@ import se.emilsjolander.sprinkles.exceptions.NoTableAnnotationException;
 import se.emilsjolander.sprinkles.typeserializers.TypeSerializer;
 
 class Utils {
+
+    private static String SCHEME_NAME = "sprinkles.db";
+    private static String QUERY_PARAMETER_TABLE_NAME = "tableName";
 	
 	static <T extends QueryResult> T getResultFromCursor(Class<T> resultClass, Cursor c) {
 		try {
@@ -87,8 +90,21 @@ class Utils {
 	}
 
     static <T extends Model> Uri getNotificationUri(Class<T> clazz) {
-        return Uri.parse("sprinkles://"+getTableName(clazz));
+	    if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+            return getNotificationUri(clazz, DatabaseContentProvider.CONTENT_PROVIDER_AUTHORITY);
+
+        } else{
+            return Uri.parse("sprinkles://"+getTableName(clazz));
+        }
     }
+
+    private static <T extends Model> Uri getNotificationUri(Class<T> clazz, String authority) {
+       Uri.Builder uriBuilder = new Uri.Builder().scheme(SCHEME_NAME)
+               .authority(authority)
+               .appendQueryParameter(QUERY_PARAMETER_TABLE_NAME, clazz.toString());
+
+       return uriBuilder.build();
+   }
 
     static String getTableName(Class<? extends Model> clazz) {
         if (clazz.isAnnotationPresent(Table.class)) {
